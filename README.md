@@ -1,4 +1,5 @@
 # Letra Viva · Backend
+Servidor de Letra Viva. Se encarga del registro e inicio de sesión de los usuarios y guarda en PostgreSQL las historias, capítulos, reacciones, comentarios, favoritos y donaciones.
 
 Proyecto final · Hito 3: Desarrollo Backend.
 
