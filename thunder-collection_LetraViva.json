@@ -1,0 +1,105 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "Letra Viva",
+  "collectionId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+  "dateExported": "2026-10-20T12:00:00.000Z",
+  "version": "1.2",
+  "folders": [],
+  "requests": [
+    {
+      "_id": "e2b93349-91a6-43fe-8757-5a7e0f86253d",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Estado de la API",
+      "url": "http://localhost:3000/api/estado",
+      "method": "GET",
+      "sortNum": 10000,
+      "created": "2026-10-20T12:00:00.000Z",
+      "modified": "2026-10-20T12:00:00.000Z",
+      "headers": [],
+      "tests": []
+    },
+    {
+      "_id": "6e41b831-b7cf-44a8-a0b9-8df97c5fe4fa",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Registro",
+      "url": "http://localhost:3000/api/auth/registro",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2026-10-20T12:00:00.000Z",
+      "modified": "2026-10-20T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nombre\": \"Lectora Nueva\",\n  \"email\": \"nueva@letraviva.cl\",\n  \"password\": \"letraviva123\"\n}",
+        "form": []
+      },
+      "tests": []
+    },
+    {
+      "_id": "8ec14830-fd0a-45e5-815c-e1b3e8e5fc69",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Login (guarda el token)",
+      "url": "http://localhost:3000/api/auth/login",
+      "method": "POST",
+      "sortNum": 30000,
+      "created": "2026-10-20T12:00:00.000Z",
+      "modified": "2026-10-20T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"luna@letraviva.cl\",\n  \"password\": \"letraviva123\"\n}",
+        "form": []
+      },
+      "tests": [
+        {
+          "type": "set-env-var",
+          "custom": "json.token",
+          "action": "setto",
+          "value": "{{token}}"
+        }
+      ]
+    },
+    {
+      "_id": "20f62991-38d2-4fe7-8506-a62b310edc5c",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Mi perfil (GET)",
+      "url": "http://localhost:3000/api/usuarios/me",
+      "method": "GET",
+      "sortNum": 40000,
+      "created": "2026-10-20T12:00:00.000Z",
+      "modified": "2026-10-20T12:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "cc0475bd-c41d-4992-bb38-41bdf542aa3b",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Editar mi perfil (PUT)",
+      "url": "http://localhost:3000/api/usuarios/me",
+      "method": "PUT",
+      "sortNum": 50000,
+      "created": "2026-10-20T12:00:00.000Z",
+      "modified": "2026-10-20T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"nombre\": \"Luna D.\",\n  \"avatar_url\": \"https://i.pravatar.cc/150?u=luna2\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    }
+  ]
+}
