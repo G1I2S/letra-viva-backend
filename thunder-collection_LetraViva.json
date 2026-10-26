@@ -100,6 +100,340 @@
         "bearer": "{{token}}"
       },
       "tests": []
+    },
+    {
+      "_id": "4b62a067-8b22-4613-b537-2314286e3c42",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Géneros",
+      "url": "http://localhost:3000/api/generos",
+      "method": "GET",
+      "sortNum": 60000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "tests": []
+    },
+    {
+      "_id": "b1961626-e2e2-482d-9aec-28b7c0b4a0b7",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Listar historias (filtros)",
+      "url": "http://localhost:3000/api/historias?tipo=novela&generos=3,4&orden=populares&pagina=1&limite=10",
+      "method": "GET",
+      "sortNum": 70000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "tests": []
+    },
+    {
+      "_id": "a56728ac-e0d1-447a-91ab-fd351df8d0e6",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Ficha de historia",
+      "url": "http://localhost:3000/api/historias/1",
+      "method": "GET",
+      "sortNum": 80000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "a522f0b0-4dcc-49f9-b386-e36e83fb877d",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Crear historia",
+      "url": "http://localhost:3000/api/historias",
+      "method": "POST",
+      "sortNum": 90000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"Historia de prueba\",\n  \"resumen\": \"Un resumen corto.\",\n  \"portada_url\": \"https://picsum.photos/seed/prueba/800/400\",\n  \"tipo\": \"novela\",\n  \"generos\": [\n    3,\n    4\n  ]\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "65c6705d-7151-41ee-8ca3-ec674b1540d0",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Editar historia",
+      "url": "http://localhost:3000/api/historias/1",
+      "method": "PUT",
+      "sortNum": 100000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"La última señal (editada)\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "45b16339-2a99-44a7-9d37-1605676c846a",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Eliminar historia",
+      "url": "http://localhost:3000/api/historias/1",
+      "method": "DELETE",
+      "sortNum": 110000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "92f85017-25c3-470c-acf3-134155d3e082",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Leer capítulo",
+      "url": "http://localhost:3000/api/historias/1/capitulos/1",
+      "method": "GET",
+      "sortNum": 120000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "bf045171-6cb3-4d53-a1ec-e4e55eafc3aa",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Crear capítulo",
+      "url": "http://localhost:3000/api/historias/1/capitulos",
+      "method": "POST",
+      "sortNum": 130000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"titulo\": \"La respuesta\",\n  \"contenido\": \"Texto del capítulo...\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "98c5911e-2a85-44d5-ba72-dfc52fce494f",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Guardar lectura",
+      "url": "http://localhost:3000/api/lecturas",
+      "method": "PUT",
+      "sortNum": 140000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"historia_id\": 2,\n  \"capitulo_id\": 20\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "a71910b0-e31d-4077-8acd-7b08f8de2f19",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Reaccionar a capítulo",
+      "url": "http://localhost:3000/api/capitulos/20/reacciones",
+      "method": "POST",
+      "sortNum": 150000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"tipo\": \"fuego\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "3370f3b3-a040-48ef-88e5-ec04836d2d61",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Quitar reacción",
+      "url": "http://localhost:3000/api/capitulos/20/reacciones",
+      "method": "DELETE",
+      "sortNum": 160000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "1c35a582-e789-4e77-b341-d5dea264d9e9",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Comentarios de historia",
+      "url": "http://localhost:3000/api/historias/1/comentarios",
+      "method": "GET",
+      "sortNum": 170000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "tests": []
+    },
+    {
+      "_id": "595b83fa-f89e-4a7e-90da-738c04c8af92",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Comentar historia",
+      "url": "http://localhost:3000/api/historias/2/comentarios",
+      "method": "POST",
+      "sortNum": 180000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"contenido\": \"¡Necesito el capítulo 2!\"\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "39264db6-d919-435f-93d0-15cccf2f1ce7",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Mis favoritos",
+      "url": "http://localhost:3000/api/favoritos",
+      "method": "GET",
+      "sortNum": 190000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "afbdc05e-b8ad-4045-a4c6-4f25b7187d3c",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Agregar favorito",
+      "url": "http://localhost:3000/api/favoritos",
+      "method": "POST",
+      "sortNum": 200000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"historia_id\": 2\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "91cc58d0-b5c1-4c11-bbfe-ee84f328ec73",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Quitar favorito",
+      "url": "http://localhost:3000/api/favoritos/2",
+      "method": "DELETE",
+      "sortNum": 210000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "ecaf2074-ad27-4740-96dd-9968542c025a",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Donar (modo prueba)",
+      "url": "http://localhost:3000/api/donaciones",
+      "method": "POST",
+      "sortNum": 220000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"escritor_id\": 8,\n  \"historia_id\": 2,\n  \"monto\": 2000\n}",
+        "form": []
+      },
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
+      "_id": "b5fcfdd9-ad49-4348-9b83-85cb820bb7a3",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Notificaciones",
+      "url": "http://localhost:3000/api/notificaciones",
+      "method": "GET",
+      "sortNum": 230000,
+      "created": "2026-10-25T12:00:00.000Z",
+      "modified": "2026-10-25T12:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
     }
   ]
 }
