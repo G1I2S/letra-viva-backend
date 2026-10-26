@@ -82,5 +82,4 @@ Node.js, Express, PostgreSQL (pg), JWT, bcryptjs, CORS, Jest y Supertest.
 ## Equipo
 
 - Gisela Astudillo · [@G1I2S](https://github.com/G1I2S)
-- Sofía Maturana · [@SilverTke](https://github.com/SilverTke)
 - Jorge Guzmán · [@JGuzGaj](https://github.com/JGuzGaj)
