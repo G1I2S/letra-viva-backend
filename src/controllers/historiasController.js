@@ -32,33 +32,40 @@ async function listarGeneros(req, res) {
 
 async function listarHistorias(req, res) {
   try {
-    const { tipo, generos, buscar, orden, dias } = req.query;
+    const { tipo, generos, buscar, dias } = req.query;
     const pagina = Number.parseInt(req.query.pagina, 10) || 1;
     const limite = Number.parseInt(req.query.limite, 10) || 12;
+    const orden = req.query.orden || 'recientes';
+
     if (pagina < 1 || limite < 1 || limite > 100) {
       return res.status(400).json({ error: 'pagina debe ser mayor que 0 y limite debe estar entre 1 y 100' });
     }
     if (tipo && !['novela', 'corto'].includes(tipo)) return res.status(400).json({ error: 'El tipo debe ser novela o corto' });
-    const genreIds = listaIds(generos);
-    if (!genreIds || genreIds.some((id) => !idValido(id))) return res.status(400).json({ error: 'El filtro generos debe contener IDs válidos' });
-    const days = dias === undefined ? null : Number(dias);
-    if (days !== null && (!Number.isInteger(days) || days < 1 || days > 3650)) return res.status(400).json({ error: 'dias debe ser un entero entre 1 y 3650' });
+    const idsGeneros = listaIds(generos);
+    if (!idsGeneros || idsGeneros.some((id) => !idValido(id))) return res.status(400).json({ error: 'El filtro generos debe contener IDs válidos' });
+    const cantidadDias = dias === undefined ? null : Number(dias);
+    if (cantidadDias !== null && (!Number.isInteger(cantidadDias) || cantidadDias < 1 || cantidadDias > 3650)) {
+      return res.status(400).json({ error: 'dias debe ser un entero entre 1 y 3650' });
+    }
 
-    const values = [];
-    const where = [];
-    const add = (value) => { values.push(value); return `$${values.length}`; };
-    if (tipo) where.push(`h.tipo = ${add(tipo)}`);
+    const valores = [];
+    const condiciones = [];
+    const agregarValor = (valor) => { valores.push(valor); return `$${valores.length}`; };
+    if (tipo) condiciones.push(`h.tipo = ${agregarValor(tipo)}`);
     if (buscar && String(buscar).trim()) {
-      const p = add(`%${String(buscar).trim()}%`);
-      where.push(`(h.titulo ILIKE ${p} OR COALESCE(h.resumen, '') ILIKE ${p} OR u.nombre ILIKE ${p})`);
+      const termino = agregarValor(`%${String(buscar).trim()}%`);
+      condiciones.push(`(h.titulo ILIKE ${termino} OR COALESCE(h.resumen, '') ILIKE ${termino} OR u.nombre ILIKE ${termino})`);
     }
-    if (genreIds.length) {
-      const p = add(genreIds.map(Number));
-      where.push(`EXISTS (SELECT 1 FROM historia_generos hgf WHERE hgf.historia_id = h.id AND hgf.genero_id = ANY(${p}::int[]))`);
+    if (idsGeneros.length) {
+      const parametroGeneros = agregarValor(idsGeneros.map(Number));
+      condiciones.push(`EXISTS (SELECT 1 FROM historia_generos hgf WHERE hgf.historia_id = h.id AND hgf.genero_id = ANY(${parametroGeneros}::int[]))`);
     }
-    if (days !== null) where.push(`h.fecha_actualizacion >= NOW() - (${add(days)} * INTERVAL '1 day')`);
+    if (cantidadDias !== null) condiciones.push(`h.fecha_actualizacion >= NOW() - (${agregarValor(cantidadDias)} * INTERVAL '1 day')`);
 
-    const orderOptions = {
+    // Los nombres de orden coinciden con el contrato de la API.
+    const ordenesPermitidos = {
+      recientes: 'h.fecha_actualizacion DESC, h.id DESC',
+      populares: 'h.total_reacciones DESC, h.total_favoritos DESC, h.id DESC',
       reciente: 'h.fecha_actualizacion DESC, h.id DESC',
       actualizacion: 'h.fecha_actualizacion DESC, h.id DESC',
       popular: 'h.total_reacciones DESC, h.total_favoritos DESC, h.id DESC',
@@ -66,27 +73,41 @@ async function listarHistorias(req, res) {
       titulo: 'h.titulo ASC, h.id ASC',
       antiguo: 'h.fecha_creacion ASC, h.id ASC',
     };
-    const orderBy = orderOptions[orden] || orderOptions.reciente;
-    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
-    const count = await pool.query(
+    const ordenSql = ordenesPermitidos[orden] || ordenesPermitidos.recientes;
+    const whereSql = condiciones.length ? `WHERE ${condiciones.join(' AND ')}` : '';
+    const consultaTotal = await pool.query(
       `SELECT COUNT(DISTINCT h.id)::int AS total FROM historias h JOIN usuarios u ON u.id = h.autor_id ${whereSql}`,
-      values
+      valores
     );
-    const offsetPlaceholder = add((pagina - 1) * limite);
-    const limitPlaceholder = add(limite);
+    const total = Number(consultaTotal.rows[0]?.total || 0);
+    const desplazamiento = agregarValor((pagina - 1) * limite);
+    const limiteSql = agregarValor(limite);
     const { rows } = await pool.query(
-      `SELECT h.id, h.autor_id, h.titulo, h.resumen, h.portada_url, h.tipo,
-              h.total_reacciones, h.total_comentarios, h.total_favoritos, h.total_lecturas,
-              h.fecha_creacion, h.fecha_actualizacion,
-              u.nombre AS autor, u.avatar_url AS autor_avatar,
-              COALESCE((SELECT json_agg(json_build_object('id', g.id, 'nombre', g.nombre) ORDER BY g.id)
+      `SELECT h.id, h.titulo, h.resumen, h.portada_url, h.tipo,
+              h.autor_id, u.nombre AS autor_nombre,
+              h.total_reacciones, h.total_comentarios,
+              COALESCE((SELECT json_agg(g.nombre ORDER BY g.id)
                         FROM historia_generos hg JOIN generos g ON g.id = hg.genero_id WHERE hg.historia_id = h.id), '[]'::json) AS generos,
-              (SELECT COUNT(*)::int FROM capitulos c WHERE c.historia_id = h.id) AS cantidad_capitulos
+              (SELECT json_build_object('numero', c.numero, 'fecha_publicacion', c.fecha_publicacion)
+               FROM capitulos c WHERE c.historia_id = h.id ORDER BY c.numero DESC LIMIT 1) AS ultimo_capitulo
        FROM historias h JOIN usuarios u ON u.id = h.autor_id ${whereSql}
-       ORDER BY ${orderBy} LIMIT ${limitPlaceholder} OFFSET ${offsetPlaceholder}`,
-      values
+       ORDER BY ${ordenSql} LIMIT ${limiteSql} OFFSET ${desplazamiento}`,
+      valores
     );
-    return res.json({ historias: rows, paginacion: { pagina, limite, total: count.rows[0].total, paginas: Math.ceil(count.rows[0].total / limite) } });
+
+    const historias = rows.map((historia) => ({
+      id: historia.id,
+      titulo: historia.titulo,
+      resumen: historia.resumen,
+      portada_url: historia.portada_url,
+      tipo: historia.tipo,
+      autor: { id: historia.autor_id, nombre: historia.autor_nombre },
+      generos: Array.isArray(historia.generos) ? historia.generos : [],
+      total_reacciones: historia.total_reacciones,
+      total_comentarios: historia.total_comentarios,
+      ultimo_capitulo: historia.ultimo_capitulo || null,
+    }));
+    return res.json({ pagina, total, historias });
   } catch (error) { return errorServidor(res); }
 }
 
@@ -94,26 +115,50 @@ async function obtenerHistoria(req, res) {
   try {
     if (!idValido(req.params.id)) return res.status(400).json({ error: 'ID de historia inválido' });
     const usuario = usuarioOpcional(req);
-    const values = [Number(req.params.id)];
-    let personalSql = `FALSE AS es_favorito, NULL::int AS capitulo_actual`;
+    const valores = [Number(req.params.id)];
+    let consultaPersonal = '';
     if (usuario && idValido(usuario.id)) {
-      values.push(Number(usuario.id));
-      personalSql = `EXISTS (SELECT 1 FROM favoritos f WHERE f.historia_id = h.id AND f.usuario_id = $2) AS es_favorito,
+      valores.push(Number(usuario.id));
+      consultaPersonal = `,
+        EXISTS (SELECT 1 FROM favoritos f WHERE f.historia_id = h.id AND f.usuario_id = $2) AS es_favorito,
         (SELECT c.numero FROM lecturas l JOIN capitulos c ON c.id = l.capitulo_id WHERE l.historia_id = h.id AND l.usuario_id = $2) AS capitulo_actual`;
     }
     const { rows } = await pool.query(
-      `SELECT h.id, h.autor_id, h.titulo, h.resumen, h.portada_url, h.tipo,
+      `SELECT h.id, h.titulo, h.resumen, h.portada_url, h.tipo,
+              h.autor_id, u.nombre AS autor_nombre, u.avatar_url AS autor_avatar,
               h.total_reacciones, h.total_comentarios, h.total_favoritos, h.total_lecturas,
-              h.fecha_creacion, h.fecha_actualizacion, u.nombre AS autor, u.avatar_url AS autor_avatar,
-              ${personalSql},
-              COALESCE((SELECT json_agg(json_build_object('id', g.id, 'nombre', g.nombre) ORDER BY g.id)
+              COALESCE((SELECT json_agg(g.nombre ORDER BY g.id)
                         FROM historia_generos hg JOIN generos g ON g.id = hg.genero_id WHERE hg.historia_id = h.id), '[]'::json) AS generos,
               COALESCE((SELECT json_agg(json_build_object('id', c.id, 'numero', c.numero, 'titulo', c.titulo, 'fecha_publicacion', c.fecha_publicacion) ORDER BY c.numero)
                         FROM capitulos c WHERE c.historia_id = h.id), '[]'::json) AS capitulos
-       FROM historias h JOIN usuarios u ON u.id = h.autor_id WHERE h.id = $1`, values
+              ${consultaPersonal}
+       FROM historias h JOIN usuarios u ON u.id = h.autor_id WHERE h.id = $1`, valores
     );
-    if (!rows[0]) return res.status(404).json({ error: 'Historia no encontrada' });
-    return res.json(rows[0]);
+    const historia = rows[0];
+    if (!historia) return res.status(404).json({ error: 'Historia no encontrada' });
+
+    // La ficha pública no expone campos de sesión si no se envió un token válido.
+    const respuesta = {
+      id: historia.id,
+      titulo: historia.titulo,
+      resumen: historia.resumen,
+      portada_url: historia.portada_url,
+      tipo: historia.tipo,
+      autor: { id: historia.autor_id, nombre: historia.autor_nombre, avatar_url: historia.autor_avatar },
+      generos: Array.isArray(historia.generos) ? historia.generos : [],
+      totales: {
+        reacciones: historia.total_reacciones,
+        comentarios: historia.total_comentarios,
+        favoritos: historia.total_favoritos,
+        lecturas: historia.total_lecturas,
+      },
+      capitulos: Array.isArray(historia.capitulos) ? historia.capitulos : [],
+    };
+    if (usuario && idValido(usuario.id)) {
+      respuesta.es_favorito = Boolean(historia.es_favorito);
+      respuesta.capitulo_actual = historia.capitulo_actual === null ? null : historia.capitulo_actual;
+    }
+    return res.json(respuesta);
   } catch (error) { return errorServidor(res); }
 }
 
@@ -212,29 +257,56 @@ async function obtenerCapitulo(req, res) {
   try {
     if (!idValido(req.params.id) || !idValido(req.params.numero)) return res.status(400).json({ error: 'ID de historia o número de capítulo inválido' });
     const usuario = usuarioOpcional(req);
-    const values = [Number(req.params.id), Number(req.params.numero)];
-    let personalSql = 'NULL::varchar AS mi_reaccion';
+    const valores = [Number(req.params.id), Number(req.params.numero)];
+    let consultaPersonal = '';
     if (usuario && idValido(usuario.id)) {
-      values.push(Number(usuario.id));
-      personalSql = '(SELECT r.tipo FROM reacciones r WHERE r.capitulo_id = c.id AND r.usuario_id = $3) AS mi_reaccion';
+      valores.push(Number(usuario.id));
+      consultaPersonal = ', (SELECT r.tipo FROM reacciones r WHERE r.capitulo_id = c.id AND r.usuario_id = $3) AS mi_reaccion';
     }
     const { rows } = await pool.query(
-      `SELECT c.id, c.historia_id, c.numero, c.titulo, c.contenido, c.fecha_publicacion, h.titulo AS historia_titulo,
-              h.autor_id, u.nombre AS autor, ${personalSql}
+      `SELECT c.id, c.numero, c.titulo, c.contenido,
+              h.id AS historia_id, h.titulo AS historia_titulo, h.autor_id, u.nombre AS autor_nombre,
+              (SELECT COUNT(*)::int FROM capitulos ct WHERE ct.historia_id = h.id) AS total_capitulos,
+              (SELECT MAX(cp.numero) FROM capitulos cp WHERE cp.historia_id = h.id AND cp.numero < c.numero) AS anterior,
+              (SELECT MIN(cs.numero) FROM capitulos cs WHERE cs.historia_id = h.id AND cs.numero > c.numero) AS siguiente,
+              json_build_object(
+                'llorar', (SELECT COUNT(*)::int FROM reacciones r WHERE r.capitulo_id = c.id AND r.tipo = 'llorar'),
+                'sorpresa', (SELECT COUNT(*)::int FROM reacciones r WHERE r.capitulo_id = c.id AND r.tipo = 'sorpresa'),
+                'risa', (SELECT COUNT(*)::int FROM reacciones r WHERE r.capitulo_id = c.id AND r.tipo = 'risa'),
+                'fuego', (SELECT COUNT(*)::int FROM reacciones r WHERE r.capitulo_id = c.id AND r.tipo = 'fuego'),
+                'corazon_roto', (SELECT COUNT(*)::int FROM reacciones r WHERE r.capitulo_id = c.id AND r.tipo = 'corazon_roto')
+              ) AS reacciones
+              ${consultaPersonal}
        FROM capitulos c JOIN historias h ON h.id = c.historia_id JOIN usuarios u ON u.id = h.autor_id
-       WHERE c.historia_id = $1 AND c.numero = $2`, values
+       WHERE c.historia_id = $1 AND c.numero = $2`, valores
     );
-    if (!rows[0]) return res.status(404).json({ error: 'Capítulo no encontrado' });
-    return res.json(rows[0]);
+    const capitulo = rows[0];
+    if (!capitulo) return res.status(404).json({ error: 'Capítulo no encontrado' });
+    const respuesta = {
+      id: capitulo.id,
+      historia: {
+        id: capitulo.historia_id,
+        titulo: capitulo.historia_titulo,
+        autor: { id: capitulo.autor_id, nombre: capitulo.autor_nombre },
+      },
+      numero: capitulo.numero,
+      total_capitulos: Number(capitulo.total_capitulos),
+      titulo: capitulo.titulo,
+      contenido: capitulo.contenido,
+      anterior: capitulo.anterior === null ? null : capitulo.anterior,
+      siguiente: capitulo.siguiente === null ? null : capitulo.siguiente,
+      reacciones: capitulo.reacciones || { llorar: 0, sorpresa: 0, risa: 0, fuego: 0, corazon_roto: 0 },
+    };
+    if (usuario && idValido(usuario.id)) respuesta.mi_reaccion = capitulo.mi_reaccion ?? null;
+    return res.json(respuesta);
   } catch (error) { return errorServidor(res); }
 }
 
 async function crearCapitulo(req, res) {
   if (!idValido(req.params.id)) return res.status(400).json({ error: 'ID de historia inválido' });
-  const { titulo, contenido, numero } = req.body || {};
+  const { titulo, contenido } = req.body || {};
   if (typeof titulo !== 'string' || !titulo.trim() || titulo.trim().length > 150) return res.status(400).json({ error: 'El título del capítulo es obligatorio y debe tener máximo 150 caracteres' });
   if (typeof contenido !== 'string' || !contenido.trim()) return res.status(400).json({ error: 'El contenido del capítulo es obligatorio' });
-  if (numero !== undefined && (!Number.isInteger(Number(numero)) || Number(numero) < 1)) return res.status(400).json({ error: 'El número de capítulo debe ser un entero positivo' });
   let client;
   try {
     client = await pool.connect();
@@ -244,11 +316,7 @@ async function crearCapitulo(req, res) {
     if (!historia) { await client.query('ROLLBACK'); return res.status(404).json({ error: 'Historia no encontrada' }); }
     if (Number(historia.autor_id) !== Number(req.usuario.id)) { await client.query('ROLLBACK'); return res.status(403).json({ error: 'Solo el autor puede agregar capítulos' }); }
     const countResult = await client.query('SELECT COALESCE(MAX(numero), 0)::int AS ultimo FROM capitulos WHERE historia_id = $1', [Number(req.params.id)]);
-    const nextNumber = numero === undefined ? countResult.rows[0].ultimo + 1 : Number(numero);
-    if (nextNumber !== countResult.rows[0].ultimo + 1) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'El número debe continuar la secuencia de capítulos' });
-    }
+    const nextNumber = countResult.rows[0].ultimo + 1;
     if (historia.tipo === 'corto' && countResult.rows[0].ultimo >= 1) { await client.query('ROLLBACK'); return res.status(400).json({ error: 'Un relato corto solo puede tener un capítulo' }); }
     const result = await client.query(
       'INSERT INTO capitulos (historia_id, numero, titulo, contenido) VALUES ($1, $2, $3, $4) RETURNING *',
