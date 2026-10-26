@@ -1,17 +1,18 @@
 // Rutas de historias, capítulos y géneros → se montan en /api
-// LO COMPLETA JORGE. Rutas del contrato que le tocan:
-//   GET    /generos
-//   GET    /historias                         (filtros: tipo, generos, buscar, orden, dias, pagina, limite)
-//   GET    /historias/:id                     (si viene token, agrega es_favorito y capitulo_actual)
-//   POST   /historias                      🔒
-//   PUT    /historias/:id                  🔒 solo el autor (403 si no)
-//   DELETE /historias/:id                  🔒 solo el autor (403 si no)
-//   GET    /historias/:id/capitulos/:numero   (si viene token, agrega mi_reaccion)
-//   POST   /historias/:id/capitulos        🔒 solo el autor
-// Para las rutas privadas: const verificarToken = require('../middlewares/verificarToken');
-// Los controllers van en src/controllers/historiasController.js
 const express = require('express');
+const verificarToken = require('../middlewares/verificarToken');
+const controller = require('../controllers/historiasController');
 
 const router = express.Router();
 
+router.get('/generos', controller.listarGeneros);
+router.get('/historias', controller.listarHistorias);
+router.get('/historias/:id/capitulos/:numero', controller.obtenerCapitulo);
+router.get('/historias/:id', controller.obtenerHistoria);
+router.post('/historias', verificarToken, controller.crearHistoria);
+router.put('/historias/:id', verificarToken, controller.actualizarHistoria);
+router.delete('/historias/:id', verificarToken, controller.eliminarHistoria);
+router.post('/historias/:id/capitulos', verificarToken, controller.crearCapitulo);
+
 module.exports = router;
+
