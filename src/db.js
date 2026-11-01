@@ -10,6 +10,8 @@ const pool = new Pool({
   database: process.env.DB_DATABASE,
   port: process.env.DB_PORT,
   allowExitOnIdle: true, // deja que el proceso termine cuando no hay consultas pendientes
+  // En la nube (Neon) la conexión debe ir cifrada (SSL); en tu PC no hace falta
+  ssl: process.env.DB_SSL === 'true',
 });
 
 module.exports = pool;
