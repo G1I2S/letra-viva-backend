@@ -443,8 +443,7 @@ const listarNotificaciones = async (req, res) => {
        JOIN usuarios u ON u.id = d.donante_id
        WHERE d.escritor_id = $1 AND d.donante_id <> $1
 
-       ORDER BY fecha DESC
-       LIMIT 50`,
+       ORDER BY fecha DESC`,
       [req.usuario.id]
     );
 
@@ -472,3 +471,4 @@ module.exports = {
   donar,
   listarNotificaciones,
 };
+
