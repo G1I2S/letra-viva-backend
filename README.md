@@ -54,6 +54,7 @@ El detalle de cada ruta (body y respuestas de ejemplo) está en el contrato: [do
 | DELETE | `/capitulos/:id/reacciones` | 🔒 | 204 · sin contenido |
 | GET | `/historias/:id/comentarios` | | 200 · comentarios, del más nuevo al más antiguo |
 | POST | `/historias/:id/comentarios` | 🔒 | 201 · el comentario creado |
+| DELETE | `/comentarios/:id` | 🔒 | 204 · sin contenido (quien lo escribió o el autor de la historia) |
 | GET | `/favoritos` | 🔒 | 200 · favoritos con el capítulo en que va y el total de capítulos |
 | POST | `/favoritos` | 🔒 | 201 · `historia_id` y `fecha` (409 si ya estaba) |
 | DELETE | `/favoritos/:historia_id` | 🔒 | 204 · sin contenido |
