@@ -259,6 +259,14 @@ Quita la reacción del usuario. **Respuesta 204.**
 ```
 **Respuesta 201** → el comentario creado (mismo formato que en GET).
 
+### DELETE `/comentarios/:id` 🔒
+Elimina un comentario. Lo puede eliminar quien lo escribió o el autor de la historia donde está. **Respuesta 204.**
+
+| Código | Cuándo | Respuesta |
+|---|---|---|
+| 403 | No escribió el comentario ni es autor de la historia | `{ "error": "No tienes permiso para eliminar este comentario" }` |
+| 404 | El comentario no existe | `{ "error": "Comentario no encontrado" }` |
+
 ---
 
 ## 9. Favoritos

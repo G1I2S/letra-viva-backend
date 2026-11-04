@@ -341,6 +341,23 @@
       "tests": []
     },
     {
+      "_id": "b7d4e2a1-6c3f-4e8a-9b15-2f0c8d7e4a93",
+      "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
+      "containerId": "",
+      "name": "Eliminar comentario",
+      "url": "http://localhost:3000/api/comentarios/2",
+      "method": "DELETE",
+      "sortNum": 185000,
+      "created": "2026-11-03T12:00:00.000Z",
+      "modified": "2026-11-03T12:00:00.000Z",
+      "headers": [],
+      "auth": {
+        "type": "bearer",
+        "bearer": "{{token}}"
+      },
+      "tests": []
+    },
+    {
       "_id": "39264db6-d919-435f-93d0-15cccf2f1ce7",
       "colId": "5061632d-87eb-4679-9671-3f7e66f98a37",
       "containerId": "",

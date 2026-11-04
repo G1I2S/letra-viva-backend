@@ -7,6 +7,7 @@ const {
   quitarReaccion,
   listarComentarios,
   comentar,
+  eliminarComentario,
   listarFavoritos,
   agregarFavorito,
   quitarFavorito,
@@ -23,9 +24,10 @@ router.put('/lecturas', verificarToken, guardarLectura);
 router.post('/capitulos/:id/reacciones', verificarToken, reaccionar);
 router.delete('/capitulos/:id/reacciones', verificarToken, quitarReaccion);
 
-// Comentarios (ver es público, comentar es privado)
+// Comentarios (ver es público, comentar y eliminar es privado)
 router.get('/historias/:id/comentarios', listarComentarios);
 router.post('/historias/:id/comentarios', verificarToken, comentar);
+router.delete('/comentarios/:id', verificarToken, eliminarComentario);
 
 // Favoritos
 router.get('/favoritos', verificarToken, listarFavoritos);

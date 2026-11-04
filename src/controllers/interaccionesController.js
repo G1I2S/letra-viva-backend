@@ -263,6 +263,53 @@ const comentar = async (req, res) => {
   }
 };
 
+// DELETE /api/comentarios/:id
+// Lo puede borrar quien lo escribió o el autor de la historia donde está
+const eliminarComentario = async (req, res) => {
+  const comentarioId = req.params.id;
+
+  if (!esEnteroPositivo(comentarioId)) {
+    return res.status(400).json({ error: 'ID de comentario inválido' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Quién escribió el comentario y quién es el autor de la historia
+    const resultadoComentario = await client.query(
+      `SELECT c.usuario_id, c.historia_id, h.autor_id
+       FROM comentarios c
+       JOIN historias h ON h.id = c.historia_id
+       WHERE c.id = $1`,
+      [comentarioId]
+    );
+    const comentario = resultadoComentario.rows[0];
+    if (!comentario) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Comentario no encontrado' });
+    }
+    if (comentario.usuario_id !== req.usuario.id && comentario.autor_id !== req.usuario.id) {
+      await client.query('ROLLBACK');
+      return res.status(403).json({ error: 'No tienes permiso para eliminar este comentario' });
+    }
+
+    await client.query('DELETE FROM comentarios WHERE id = $1', [comentarioId]);
+
+    await client.query(
+      'UPDATE historias SET total_comentarios = total_comentarios - 1 WHERE id = $1',
+      [comentario.historia_id]
+    );
+
+    await client.query('COMMIT');
+    res.status(204).send();
+  } catch (error) {
+    await errorEnTransaccion(client, res);
+  } finally {
+    client.release();
+  }
+};
+
 // GET /api/favoritos
 const listarFavoritos = async (req, res) => {
   try {
@@ -466,6 +513,7 @@ module.exports = {
   quitarReaccion,
   listarComentarios,
   comentar,
+  eliminarComentario,
   listarFavoritos,
   agregarFavorito,
   quitarFavorito,

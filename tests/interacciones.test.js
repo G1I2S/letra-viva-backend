@@ -15,6 +15,9 @@ let comentarioId;
 let donacionId;
 let lecturaCreada = false;
 
+// Comentarios creados para probar el DELETE: si algún test falla antes de borrarlos, se limpian en afterAll
+const comentariosParaBorrar = [];
+
 // Contadores de una historia, para comprobar que suben y bajan bien
 const contadores = async (historiaId) => {
   const { rows } = await pool.query(
@@ -46,6 +49,12 @@ afterAll(async () => {
   if (lecturaCreada) {
     await pool.query('DELETE FROM lecturas WHERE usuario_id = 1 AND historia_id = 2');
     await pool.query('UPDATE historias SET total_lecturas = total_lecturas - 1 WHERE id = 2');
+  }
+  for (const id of comentariosParaBorrar) {
+    const { rows } = await pool.query('DELETE FROM comentarios WHERE id = $1 RETURNING historia_id', [id]);
+    if (rows[0]) {
+      await pool.query('UPDATE historias SET total_comentarios = total_comentarios - 1 WHERE id = $1', [rows[0].historia_id]);
+    }
   }
   await pool.end();
 });
@@ -235,6 +244,94 @@ describe('POST /api/historias/:id/comentarios', () => {
     // Aparece primero en el GET
     const lista = await request(app).get('/api/historias/1/comentarios');
     expect(lista.body[0].id).toBe(comentarioId);
+  });
+});
+
+describe('DELETE /api/comentarios/:id', () => {
+  // Valentina comenta en una historia y devuelve el id del comentario
+  const comentarComoValentina = async (historiaId) => {
+    const res = await request(app)
+      .post(`/api/historias/${historiaId}/comentarios`)
+      .set('Authorization', `Bearer ${tokenValentina}`)
+      .send({ contenido: 'Comentario para borrar' });
+    comentariosParaBorrar.push(res.body.id);
+    return res.body.id;
+  };
+
+  const idsDeComentarios = async (historiaId) => {
+    const res = await request(app).get(`/api/historias/${historiaId}/comentarios`);
+    return res.body.map((c) => c.id);
+  };
+
+  it('responde 401 sin token', async () => {
+    const res = await request(app).delete('/api/comentarios/1');
+    expect(res.statusCode).toBe(401);
+  });
+
+  it('responde 400 si el id no es válido', async () => {
+    const res = await request(app)
+      .delete('/api/comentarios/abc')
+      .set('Authorization', `Bearer ${tokenValentina}`);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toHaveProperty('error');
+  });
+
+  it('responde 404 si el comentario no existe', async () => {
+    const res = await request(app)
+      .delete('/api/comentarios/99999')
+      .set('Authorization', `Bearer ${tokenValentina}`);
+    expect(res.statusCode).toBe(404);
+    expect(res.body).toEqual({ error: 'Comentario no encontrado' });
+  });
+
+  it('responde 403 si no lo escribió ni es autor de la historia', async () => {
+    // La historia 2 es de Tomás: Luna no escribió el comentario ni es la autora
+    const id = await comentarComoValentina(2);
+    const antes = await contadores(2);
+
+    const res = await request(app)
+      .delete(`/api/comentarios/${id}`)
+      .set('Authorization', `Bearer ${tokenLuna}`);
+    expect(res.statusCode).toBe(403);
+    expect(res.body).toEqual({ error: 'No tienes permiso para eliminar este comentario' });
+
+    // No se borró nada
+    expect((await contadores(2)).total_comentarios).toBe(antes.total_comentarios);
+    expect(await idsDeComentarios(2)).toContain(id);
+
+    // Lo borra Valentina para dejar la base como estaba
+    const borrar = await request(app)
+      .delete(`/api/comentarios/${id}`)
+      .set('Authorization', `Bearer ${tokenValentina}`);
+    expect(borrar.statusCode).toBe(204);
+  });
+
+  it('quien escribió el comentario lo elimina con 204 y resta 1 a total_comentarios', async () => {
+    const id = await comentarComoValentina(2);
+    const antes = await contadores(2);
+
+    const res = await request(app)
+      .delete(`/api/comentarios/${id}`)
+      .set('Authorization', `Bearer ${tokenValentina}`);
+    expect(res.statusCode).toBe(204);
+    expect(res.body).toEqual({});
+
+    expect((await contadores(2)).total_comentarios).toBe(antes.total_comentarios - 1);
+    expect(await idsDeComentarios(2)).not.toContain(id);
+  });
+
+  it('el autor de la historia elimina el comentario de otra persona con 204', async () => {
+    // La historia 1 es de Luna y el comentario es de Valentina
+    const id = await comentarComoValentina(1);
+    const antes = await contadores(1);
+
+    const res = await request(app)
+      .delete(`/api/comentarios/${id}`)
+      .set('Authorization', `Bearer ${tokenLuna}`);
+    expect(res.statusCode).toBe(204);
+
+    expect((await contadores(1)).total_comentarios).toBe(antes.total_comentarios - 1);
+    expect(await idsDeComentarios(1)).not.toContain(id);
   });
 });
 
